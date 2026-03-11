@@ -5,28 +5,30 @@ source /venv/main/bin/activate
 WORKSPACE=${WORKSPACE:-/workspace}
 COMFYUI_DIR="${WORKSPACE}/ComfyUI"
 
-echo "=== ComfyUI provisioning start ==="
+echo "=== Custom ComfyUI provisioning start ==="
 
 APT_PACKAGES=()
 PIP_PACKAGES=()
 
 NODES=(
-    "https://github.com/kijai/ComfyUI-WanVideoWrapper"
-    "https://github.com/chflame163/ComfyUI_LayerStyle"
-    "https://github.com/yolain/ComfyUI-Easy-Use"
-    "https://github.com/kijai/ComfyUI-KJNodes"
-    "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
-    "https://github.com/kijai/ComfyUI-segment-anything-2"
-    "https://github.com/cubiq/ComfyUI_essentials"
-    "https://github.com/fq393/ComfyUI-ZMG-Nodes"
-    "https://github.com/kijai/ComfyUI-WanAnimatePreprocess"
-    "https://github.com/rgthree/rgthree-comfy"
-    "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader"
+    # База WAN workflow
+    "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
+    "https://github.com/chflame163/ComfyUI_LayerStyle.git"
+    "https://github.com/yolain/ComfyUI-Easy-Use.git"
+    "https://github.com/kijai/ComfyUI-KJNodes.git"
+    "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git"
+    "https://github.com/kijai/ComfyUI-segment-anything-2.git"
+    "https://github.com/cubiq/ComfyUI_essentials.git"
+    "https://github.com/fq393/ComfyUI-ZMG-Nodes.git"
+    "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git"
+    "https://github.com/rgthree/rgthree-comfy.git"
+    "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader.git"
     "https://github.com/teskor-hub/NEW-UTILS.git"
 
-    # Добавлено для твоего workflow
+    # Для missing nodes
     "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git"
-    "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+    "https://github.com/shadowcz007/ComfyUI-ComfyMath.git"
+    "https://github.com/PGCRT/CRT-Nodes.git"
 )
 
 CLIP_MODELS=(
@@ -64,62 +66,32 @@ LORAS=(
     "https://huggingface.co/wdsfdsdf/OFMHUB/resolve/main/wan.reworked.safetensors"
 )
 
-function provisioning_start() {
-    echo ""
-    echo "##############################################"
-    echo "# Custom WAN setup                            #"
-    echo "##############################################"
-    echo ""
-
-    provisioning_get_apt_packages
-    provisioning_clone_comfyui
-    provisioning_install_base_reqs
-    provisioning_get_nodes
-    provisioning_get_pip_packages
-
-    provisioning_get_files "${COMFYUI_DIR}/models/clip" "${CLIP_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/clip_vision" "${CLIP_VISION[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/text_encoders" "${TEXT_ENCODERS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/vae" "${VAE_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/diffusion_models" "${DIFFUSION_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/detection" "${DETECTION_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/loras" "${LORAS[@]}"
-
-    echo ""
-    echo "Provisioning finished. Starting ComfyUI..."
-    echo ""
-}
-
-function provisioning_clone_comfyui() {
+provisioning_clone_comfyui() {
     if [[ ! -d "${COMFYUI_DIR}" ]]; then
-        echo "Cloning ComfyUI..."
         git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
     fi
     cd "${COMFYUI_DIR}"
 }
 
-function provisioning_install_base_reqs() {
+provisioning_install_base_reqs() {
     if [[ -f requirements.txt ]]; then
-        echo "Installing base requirements..."
         pip install --no-cache-dir -r requirements.txt
     fi
 }
 
-function provisioning_get_apt_packages() {
+provisioning_get_apt_packages() {
     if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
-        echo "Installing apt packages..."
         sudo apt update && sudo apt install -y "${APT_PACKAGES[@]}"
     fi
 }
 
-function provisioning_get_pip_packages() {
+provisioning_get_pip_packages() {
     if [[ ${#PIP_PACKAGES[@]} -gt 0 ]]; then
-        echo "Installing extra pip packages..."
         pip install --no-cache-dir "${PIP_PACKAGES[@]}"
     fi
 }
 
-function provisioning_get_nodes() {
+provisioning_get_nodes() {
     mkdir -p "${COMFYUI_DIR}/custom_nodes"
     cd "${COMFYUI_DIR}/custom_nodes"
 
@@ -136,25 +108,22 @@ function provisioning_get_nodes() {
             git clone "$repo" "$path" --recursive || echo " [!] Clone failed: $repo"
         fi
 
-        requirements="${path}/requirements.txt"
-        if [[ -f "$requirements" ]]; then
+        if [[ -f "${path}/requirements.txt" ]]; then
             echo "Installing deps for $dir..."
-            pip install --no-cache-dir -r "$requirements" || echo " [!] pip failed for $dir"
+            pip install --no-cache-dir -r "${path}/requirements.txt" || echo " [!] pip failed for $dir"
         fi
     done
 }
 
-function provisioning_get_files() {
+provisioning_get_files() {
     if [[ $# -lt 2 ]]; then return; fi
     local dir="$1"
     shift
     local files=("$@")
 
     mkdir -p "$dir"
-    echo "Downloading ${#files[@]} file(s) → $dir..."
 
     for url in "${files[@]}"; do
-        echo "→ $url"
         local auth_header=""
         if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
             auth_header="--header=Authorization: Bearer $HF_TOKEN"
@@ -163,14 +132,28 @@ function provisioning_get_files() {
         fi
 
         wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || echo " [!] Download failed: $url"
-        echo ""
     done
+}
+
+provisioning_start() {
+    provisioning_get_apt_packages
+    provisioning_clone_comfyui
+    provisioning_install_base_reqs
+    provisioning_get_nodes
+    provisioning_get_pip_packages
+
+    provisioning_get_files "${COMFYUI_DIR}/models/clip" "${CLIP_MODELS[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/clip_vision" "${CLIP_VISION[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/text_encoders" "${TEXT_ENCODERS[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/vae" "${VAE_MODELS[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/diffusion_models" "${DIFFUSION_MODELS[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/detection" "${DETECTION_MODELS[@]}"
+    provisioning_get_files "${COMFYUI_DIR}/models/loras" "${LORAS[@]}"
 }
 
 if [[ ! -f /.noprovisioning ]]; then
     provisioning_start
 fi
 
-echo "=== Starting ComfyUI ==="
 cd "${COMFYUI_DIR}"
 python main.py --listen 0.0.0.0 --port 8188
