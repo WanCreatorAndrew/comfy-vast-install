@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Installing missing ComfyUI nodes..."
+echo "Installing ComfyUI custom nodes..."
 
 cd /workspace/ComfyUI/custom_nodes
 
@@ -13,7 +13,15 @@ git clone "$2" "$1"
 fi
 }
 
-# TinyTerra nodes (TSColorMatch, TSPoseDataSmoother и т.д.)
+# WAN video nodes
+
+clone_or_pull "ComfyUI-WanVideoWrapper" "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
+
+# SAM2
+
+clone_or_pull "ComfyUI-SAM2" "https://github.com/kijai/ComfyUI-SAM2.git"
+
+# TinyTerra nodes
 
 clone_or_pull "ComfyUI_tinyterraNodes" "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git"
 
@@ -21,10 +29,14 @@ clone_or_pull "ComfyUI_tinyterraNodes" "https://github.com/TinyTerra/ComfyUI_tin
 
 clone_or_pull "ComfyUI-VideoHelperSuite" "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git"
 
+# Impact pack (mask nodes)
+
+clone_or_pull "ComfyUI-Impact-Pack" "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+
 echo "Installing dependencies..."
 
 find /workspace/ComfyUI/custom_nodes -maxdepth 2 -name requirements.txt -print0 | while IFS= read -r -d '' req; do
 pip install -r "$req"
 done
 
-echo "Nodes installed successfully"
+echo "All nodes installed"
