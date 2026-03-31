@@ -32,6 +32,16 @@ NODES=(
     "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git"
     "https://github.com/shadowcz007/ComfyUI-ComfyMath.git"
     "https://github.com/PGCRT/CRT-Nodes.git"
+    # CRITICAL missing nodes packs
+    "https://github.com/crystian/ComfyUI-Crystools.git"
+    "https://github.com/Fannovel16/comfyui_controlnet_aux.git"
+    "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+    "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git"
+    "https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git"
+    "https://github.com/kijai/ComfyUI-Florence2.git"
+    "https://github.com/continue-revolution/sd-webui-segment-anything.git"
+    "https://github.com/storyicon/comfyui_segment_anything.git"
+    "https://github.com/ultralytics/ultralytics.git"
 )
 
 CLIP_MODELS=(
