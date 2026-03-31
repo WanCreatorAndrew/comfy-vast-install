@@ -8,10 +8,12 @@ COMFYUI_DIR="${WORKSPACE}/ComfyUI"
 echo "=== Custom ComfyUI provisioning start ==="
 
 APT_PACKAGES=()
-PIP_PACKAGES=()
+PIP_PACKAGES=(
+    ultralytics
+)
 
 NODES=(
-    # База WAN workflow
+    # ===== БАЗА =====
     "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
     "https://github.com/chflame163/ComfyUI_LayerStyle.git"
     "https://github.com/yolain/ComfyUI-Easy-Use.git"
@@ -24,24 +26,23 @@ NODES=(
     "https://github.com/rgthree/rgthree-comfy.git"
     "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader.git"
 
-    # Teskor utils
+    # ===== TESKOR =====
     "https://github.com/teskor-hub/NEW-UTILS.git"
     "https://github.com/teskor-hub/comfyui-teskors-utils.git"
 
-    # Для missing nodes
+    # ===== MISSING NODES =====
     "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git"
     "https://github.com/shadowcz007/ComfyUI-ComfyMath.git"
     "https://github.com/PGCRT/CRT-Nodes.git"
-    # CRITICAL missing nodes packs
+
+    # ===== КРИТИЧНЫЕ ПАКИ =====
     "https://github.com/crystian/ComfyUI-Crystools.git"
     "https://github.com/Fannovel16/comfyui_controlnet_aux.git"
     "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
     "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git"
     "https://github.com/pythongosssss/ComfyUI-WD14-Tagger.git"
     "https://github.com/kijai/ComfyUI-Florence2.git"
-    "https://github.com/continue-revolution/sd-webui-segment-anything.git"
     "https://github.com/storyicon/comfyui_segment_anything.git"
-    "https://github.com/ultralytics/ultralytics.git"
 )
 
 CLIP_MODELS=(
@@ -79,6 +80,8 @@ LORAS=(
     "https://huggingface.co/wdsfdsdf/OFMHUB/resolve/main/wan.reworked.safetensors"
 )
 
+# =========================
+
 provisioning_clone_comfyui() {
     if [[ ! -d "${COMFYUI_DIR}" ]]; then
         echo "Cloning ComfyUI..."
@@ -103,7 +106,7 @@ provisioning_get_apt_packages() {
 
 provisioning_get_pip_packages() {
     if [[ ${#PIP_PACKAGES[@]} -gt 0 ]]; then
-        echo "Installing extra pip packages..."
+        echo "Installing pip packages..."
         pip install --no-cache-dir "${PIP_PACKAGES[@]}"
     fi
 }
@@ -119,11 +122,7 @@ provisioning_get_nodes() {
 
         if [[ -d "$path" ]]; then
             echo "Updating node: $dir"
-            (
-                cd "$path" && \
-                git pull --ff-only 2>/dev/null || \
-                git fetch --all 2>/dev/null || true
-            )
+            (cd "$path" && git pull --ff-only 2>/dev/null || true)
         else
             echo "Cloning node: $dir"
             git clone "$repo" "$path" --recursive || echo " [!] Clone failed: $repo"
@@ -146,14 +145,13 @@ provisioning_get_files() {
 
     for url in "${files[@]}"; do
         local auth_header=""
+
         if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
             auth_header="--header=Authorization: Bearer $HF_TOKEN"
-        elif [[ -n "$CIVITAI_TOKEN" && "$url" =~ civitai\.com ]]; then
-            auth_header="--header=Authorization: Bearer $CIVITAI_TOKEN"
         fi
 
         echo "Downloading: $url"
-        wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || echo " [!] Download failed: $url"
+        wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || echo " [!] Download failed"
     done
 }
 
@@ -173,9 +171,12 @@ provisioning_start() {
     provisioning_get_files "${COMFYUI_DIR}/models/loras" "${LORAS[@]}"
 }
 
+# =========================
+
 if [[ ! -f /.noprovisioning ]]; then
     provisioning_start
 fi
 
+echo "=== Starting ComfyUI ==="
 cd "${COMFYUI_DIR}"
 python main.py --listen 0.0.0.0 --port 8188
